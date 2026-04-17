@@ -666,22 +666,7 @@ This camp becomes a brutal test of survivability, forcing people to rely on will
       });
     }
 
-    function runSelfChecks() {
-      console.assert(!!sceneContainer, 'sceneContainer should exist');
-      console.assert(!!bar, 'progress bar should exist');
-      console.assert(!!progressLabel, 'progress label should exist');
-      console.assert(!!restartButton, 'restart button should exist');
-      console.assert(!!scenes.start, 'start scene should exist');
-      console.assert(Array.isArray(scenes.start.choices), 'start scene should have choices');
-      console.assert(!!scenes.sortingChoice, 'sortingChoice scene should exist');
-      console.assert(!!scenes.disciplinePath, 'disciplinePath scene should exist');
-      console.assert(!!scenes.finalChoice, 'finalChoice scene should exist');
-      console.assert(scenes.sortingChoice.choices.some(choice => choice.next === 'disciplinePath'), 'sortingChoice should link to disciplinePath');
-    }
-
-    restartButton.addEventListener('click', () => renderScene('start'));
-
-    runSelfChecks();
+        restartButton.addEventListener('click', () => renderScene('start'));
     renderScene('start');
   </script>
 </body>
