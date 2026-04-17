@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>This Way for the Gas, Ladies and Gentlemen - Interactive Story</title>
+  <style>
+    :root {
+      --bg: #070707;
+      --panel: rgba(15, 15, 15, 0.92);
+      --text: #f5f5f5;
+      --muted: #bdbdbd;
+      --accent: #b22222;
+      --accent-dark: #7a0f0f;
+      --border: rgba(255, 255, 255, 0.08);
+      --shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top, rgba(120, 120, 120, 0.08), transparent 35%),
+        linear-gradient(180deg, #111 0%, #080808 40%, #050505 100%);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 4px 4px;
+      opacity: 0.22;
+      pointer-events: none;
+      mix-blend-mode: soft-light;
+    }
+
+    .wrapper {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+    }
+
+    .app {
+      width: min(920px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+
+    .main-title {
+      margin: 0;
+      font-size: clamp(1.4rem, 2.5vw, 2rem);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      line-height: 1.25;
+    }
+
+    .intro-note {
+      margin: 10px 0 0;
+      max-width: 700px;
+      color: #ccc;
+      line-height: 1.55;
+      font-size: 0.98rem;
+    }
+
+    button {
+      appearance: none;
+      border: none;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .choice-btn,
+    .primary-btn {
+      border-radius: 14px;
+      transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease;
+    }
+
+    .choice-btn:hover,
+    .primary-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .story {
+      padding: 28px;
+      min-height: 560px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+    }
+
+    .scene-tag {
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 0.75rem;
+      margin-bottom: 16px;
+    }
+
+    .scene-title {
+      font-size: clamp(1.9rem, 4vw, 3rem);
+      line-height: 1.1;
+      margin: 0 0 18px;
+      max-width: 14ch;
+    }
+
+    .scene-text {
+      font-size: clamp(1.05rem, 1.6vw, 1.18rem);
+      line-height: 1.75;
+      color: #efefef;
+      max-width: 70ch;
+      white-space: pre-line;
+    }
+
+    .quote {
+      margin-top: 20px;
+      padding: 16px 18px;
+      border-left: 3px solid var(--accent);
+      background: rgba(255,255,255,0.03);
+      color: #f0dede;
+      line-height: 1.7;
+      max-width: 72ch;
+    }
+
+    .choices {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 28px;
+    }
+
+    .choice-btn {
+      text-align: left;
+      padding: 18px;
+      background: rgba(178, 34, 34, 0.12);
+      color: var(--text);
+      border: 1px solid rgba(178, 34, 34, 0.35);
+      min-height: 92px;
+    }
+
+    .choice-btn strong {
+      display: block;
+      font-size: 1rem;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    .choice-btn span {
+      display: block;
+      color: #d5d5d5;
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 28px 26px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .progress-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 240px;
+      flex: 1;
+    }
+
+    .progress {
+      flex: 1;
+      height: 8px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent-dark), var(--accent));
+      transition: width 0.35s ease;
+    }
+
+    .primary-btn {
+      background: var(--accent);
+      color: #fff;
+      padding: 12px 18px;
+      font-weight: 700;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.45s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 700px) {
+      .topbar, .footer {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .choices {
+        grid-template-columns: 1fr;
+      }
+
+      .story {
+        padding: 22px;
+        min-height: 0;
+      }
+
+      .footer {
+        padding: 18px 22px 22px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <main class="app">
+      <div class="topbar">
+        <div class="title-group">
+          <div>
+          <h1 class="main-title">Interactive adaptation of life in Auschwitz, inspired by "This Way for the Gas, Ladies and Gentlemen."</h1>
+          <p class="intro-note">This interactive story adapts my close reading of "This Way for the Gas, Ladies and Gentlemen" by Tadeusz Borowski. It emulates a simulation of how the camp environment forces prisoners into obedience, emotional detachment, and moral collapse, just as the narrator in Borowski's story does.</p>
+        </div>
+        </div>
+      </div>
+
+      <section class="story fade-in" id="sceneContainer"></section>
+
+      <div class="footer">
+        <div class="progress-wrap">
+          <span id="progressLabel">Beginning</span>
+          <div class="progress"><div class="bar" id="bar"></div></div>
+        </div>
+        <button class="primary-btn" id="restartBottom">Start Over</button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const scenes = {
+      start: {
+        tag: 'Start',
+        title: 'You arrive at Auschwitz.',
+        text: `You step off the train into chaos.
+
+Guards are shouting. People are being pushed. No one explains anything.
+
+You think the goal is to survive.
+
+But every second here starts changing you.`,
+        choices: [
+          { label: 'Keep going', sub: '', next: 'order' }
+        ],
+        progress: 5,
+        label: 'Start'
+      },
+
+      order: {
+        tag: 'Choice 1',
+        title: 'A guard yells an order.',
+        text: `A guard screams at you in German and points.
+
+People around you instantly respond.
+
+You feel yourself almost hesitate.`,
+        choices: [
+          { label: 'Obey', sub: 'Do what everyone else is doing.', next: 'obediencePath' },
+          { label: 'Hesitate', sub: 'Try to understand what’s happening.', next: 'punishedEnding' }
+        ],
+        progress: 15,
+        label: 'Choice'
+      },
+
+      punishedEnding: {
+        tag: 'Ending',
+        title: 'You hesitated.',
+        text: `The guard notices immediately.
+
+He hits you and drags you out of line.
+
+No one helps. No one even looks.
+
+You learn too late. Hesitation isn’t allowed here.`,
+        choices: [
+          { label: 'Restart', sub: '', next: 'start' }
+        ],
+        progress: 100,
+        label: 'End'
+      },
+
+      obediencePath: {
+        tag: 'Path',
+        title: '"Jawohl."',
+        text: `You respond instantly.
+
+"Jawohl" means “yes” or “yes, sir.”
+
+You don’t even think about it.
+
+That’s what everyone else does. That’s how you stay safe.`,
+        
+        choices: [
+          { label: 'Continue', sub: '', next: 'helpChoice' }
+        ],
+        progress: 25,
+        label: 'Obedience'
+      },
+
+      helpChoice: {
+        tag: 'Choice 2',
+        title: 'Someone collapses beside you.',
+        text: `A man next to you falls to the ground.
+
+He’s weak, barely moving.
+
+People step over him.
+
+Do you stop?`,
+        choices: [
+          { label: 'Help them', sub: 'Try to lift him up.', next: 'helpEnding' },
+          { label: 'Ignore them', sub: 'Keep moving like everyone else.', next: 'survivalPath' }
+        ],
+        progress: 40,
+        label: 'Choice'
+      },
+
+      helpEnding: {
+        tag: 'Ending',
+        title: 'You tried to help.',
+        text: `You stop and reach down.
+
+A guard immediately notices.
+
+He yells, shoves you back, and pulls you out of line.
+
+Helping someone makes you a problem.
+
+And problems don’t last long here.`,
+        choices: [
+          { label: 'Restart', sub: '', next: 'start' }
+        ],
+        progress: 100,
+        label: 'End'
+      },
+
+      survivalPath: {
+        tag: 'Path',
+        title: 'You keep moving.',
+        text: `You look away and keep walking.
+
+No one else stops either.
+
+These moments start to stop phasing you.`,
+        choices: [
+          { label: 'Continue', sub: '', next: 'sortingChoice' }
+        ],
+        progress: 55,
+        label: 'Survival'
+      },
+
+      sortingChoice: {
+        tag: 'Choice 3',
+        title: 'You are told to sort belongings.',
+        text: `Piles of suitcases are dumped in front of you.
+
+Clothes, photos, letters, valuables.
+
+Do you go through them, or avoid looking?`,
+        choices: [
+          { label: 'Search through them', sub: 'Take what you can use.', next: 'stealEnding' },
+          { label: 'Avoid looking', sub: 'Focus only on the task.', next: 'disciplinePath' }
+        ],
+        progress: 65,
+        label: 'Choice'
+      },
+
+      disciplinePath: {
+        tag: 'Result',
+        title: 'You keep your head down.',
+        text: `You don’t look at anything.
+
+You just sort and move.
+
+A photograph slips out of one suitcase and lands at your feet.
+
+It shows a family smiling together, like none of this has happened yet.
+
+For a second, you almost stop.
+
+Then you shove it back in the pile and keep working.
+
+You then realize the true hell you have been put in.
+
+You think about what life was like before, but you force yourself to ignore it.`,
+        choices: [
+          { label: 'Continue', sub: '', next: 'emotionChoice' }
+        ],
+        progress: 70,
+        label: 'Discipline'
+      },
+
+      stealEnding: {
+        tag: 'Ending',
+        title: 'You take something.',
+        text: `You pocket a box of cigarettes.
+
+A guard sees.
+
+You are dragged away immediately.
+
+In this camp, risks almost never reap rewards.`,
+        choices: [
+          { label: 'Restart', sub: '', next: 'start' }
+        ],
+        progress: 100,
+        label: 'End'
+      },
+
+      emotionChoice: {
+        tag: 'Choice 4',
+        title: 'You see where people are being sent.',
+        text: `You watch as groups are pushed toward the gas chambers.
+
+Some are crying. Some don’t understand.
+
+You feel something rising in you.
+
+Do you hold onto it?`,
+        quote: `"I feel no pity. I am not sorry they’re going to the gas chamber." This shows how prisoners become emotionally detached just to survive.`,
+        choices: [
+          { label: 'Feel it', sub: 'Let yourself react.', next: 'breakdownEnding' },
+          { label: 'Shut it off', sub: 'Push it down.', next: 'numbPath' }
+        ],
+        progress: 75,
+        label: 'Emotion'
+      },
+
+      breakdownEnding: {
+        tag: 'Ending',
+        title: 'You couldn’t handle it.',
+        text: `You freeze in place.
+
+A guard notices immediately.
+
+He shouts and pushes you forward, but you don’t react fast enough.
+
+You’re pulled out of line and hit hard, the air knocked out of you.
+
+You try to explain, but no one listens.
+
+Within seconds, you are dragged away, disappearing from the line like you were never there.`,
+        choices: [
+          { label: 'Restart', sub: '', next: 'start' }
+        ],
+        progress: 100,
+        label: 'End'
+      },
+
+      numbPath: {
+        tag: 'Path',
+        title: 'You feel nothing.',
+        text: `You force it down.
+
+You stop reacting.
+
+You just do what you’re told.
+
+It works.
+
+But something about you is different now.`,
+        choices: [
+          { label: 'Continue', sub: '', next: 'foodChoice' }
+        ],
+        progress: 85,
+        label: 'Numbness'
+      },
+
+      foodChoice: {
+        tag: 'Choice 5',
+        title: 'You see extra food.',
+        text: `You notice food left unattended.
+
+You are starving.
+
+Do you take it, or leave it?`,
+        choices: [
+          { label: 'Take it', sub: 'You need it to survive.', next: 'caughtEnding' },
+          { label: 'Leave it', sub: 'Avoid the risk.', next: 'leaveFoodOutcome' }
+        ],
+        progress: 90,
+        label: 'Choice'
+      },
+
+      caughtEnding: {
+        tag: 'Ending',
+        title: 'You got caught.',
+        text: `You grab the food.
+
+A guard sees you instantly.
+
+You are beaten and taken away.
+
+Even small risks can end everything here.`,
+        choices: [
+          { label: 'Restart', sub: '', next: 'start' }
+        ],
+        progress: 100,
+        label: 'End'
+      },
+
+      leaveFoodOutcome: {
+        tag: 'Result',
+        title: 'You leave it.',
+        text: `You walk past it.
+
+A second later, someone else grabs the food.
+
+A guard notices instantly.
+
+He beats them in front of everyone and drags them away.
+
+No one reacts.
+
+You realize you made the right choice.`,
+        choices: [
+          { label: 'Continue', sub: '', next: 'finalChoice' }
+        ],
+        progress: 92,
+        label: 'Consequence'
+      },
+
+      finalChoice: {
+        tag: 'Final Choice',
+        title: 'Are you still a good person?',
+        text: `You’ve made it this far.
+
+You survived.
+
+But now you have to ask yourself.
+
+What did it cost?`,
+        choices: [
+          { label: 'Yes', sub: 'You try to believe you are.', next: 'denialEnding' },
+          { label: 'No', sub: 'You know something changed.', next: 'acceptanceEnding' }
+        ],
+        progress: 95,
+        label: 'Identity'
+      },
+
+      denialEnding: {
+        tag: 'Ending',
+        title: 'You tell yourself yes.',
+        text: `You survived.
+
+You push everything else out of your mind.
+
+You don’t think about what you ignored.
+
+You don’t think about what you became.
+
+You just keep going.
+
+Like the narrator in Borowski’s story, you maintain the illusion of being “good,” but only by refusing to confront what survival required.
+
+In this camp, morality is destroyed.`,
+        choices: [
+          { label: 'Restart', sub: '', next: 'start' }
+        ],
+        progress: 100,
+        label: 'End'
+      },
+
+      acceptanceEnding: {
+        tag: 'Ending',
+        title: 'You admit the truth.',
+        text: `You survived.
+
+But you’re not the same person anymore.
+
+You know exactly what it took.
+
+Like the narrator in Borowski’s story, survival required losing empathy, morality, and identity.
+
+In Auschwitz, you can barely even imagine what life was like outside anymore.
+
+This camp becomes a brutal test of survivability, forcing people to rely on willpower and discipline while stripping away their humanity.`,
+        choices: [
+          { label: 'Restart', sub: '', next: 'start' }
+        ],
+        progress: 100,
+        label: 'End'
+      }
+    };
+
+    const sceneContainer = document.getElementById('sceneContainer');
+    const bar = document.getElementById('bar');
+    const progressLabel = document.getElementById('progressLabel');
+    const restartButton = document.getElementById('restartBottom');
+
+    function renderScene(key) {
+      const scene = scenes[key];
+      if (!scene) {
+        console.error(`Missing scene: ${key}`);
+        return;
+      }
+
+      sceneContainer.classList.remove('fade-in');
+      void sceneContainer.offsetWidth;
+      sceneContainer.classList.add('fade-in');
+
+      const quoteHTML = scene.quote ? `<div class="quote">${scene.quote}</div>` : '';
+      const choicesHTML = (scene.choices || []).map((choice) => `
+        <button class="choice-btn" data-next="${choice.next}">
+          <strong>${choice.label}</strong>
+          <span>${choice.sub}</span>
+        </button>
+      `).join('');
+
+      sceneContainer.innerHTML = `
+        <div class="scene-tag">${scene.tag}</div>
+        <h2 class="scene-title">${scene.title}</h2>
+        <div class="scene-text">${scene.text}</div>
+        ${quoteHTML}
+        <div class="choices">${choicesHTML}</div>
+      `;
+
+      bar.style.width = `${scene.progress}%`;
+      progressLabel.textContent = scene.label;
+
+      sceneContainer.querySelectorAll('[data-next]').forEach((btn) => {
+        btn.addEventListener('click', () => renderScene(btn.dataset.next));
+      });
+    }
+
+    function runSelfChecks() {
+      console.assert(!!sceneContainer, 'sceneContainer should exist');
+      console.assert(!!bar, 'progress bar should exist');
+      console.assert(!!progressLabel, 'progress label should exist');
+      console.assert(!!restartButton, 'restart button should exist');
+      console.assert(!!scenes.start, 'start scene should exist');
+      console.assert(Array.isArray(scenes.start.choices), 'start scene should have choices');
+      console.assert(!!scenes.sortingChoice, 'sortingChoice scene should exist');
+      console.assert(!!scenes.disciplinePath, 'disciplinePath scene should exist');
+      console.assert(!!scenes.finalChoice, 'finalChoice scene should exist');
+      console.assert(scenes.sortingChoice.choices.some(choice => choice.next === 'disciplinePath'), 'sortingChoice should link to disciplinePath');
+    }
+
+    restartButton.addEventListener('click', () => renderScene('start'));
+
+    runSelfChecks();
+    renderScene('start');
+  </script>
+</body>
+</html>
